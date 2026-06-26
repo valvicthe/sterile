@@ -44,9 +44,6 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # Disables automatic release creation so we handle artifacts manually
-          tauriScript: npm run tauri build
 
       - name: "upload system artifacts"
         uses: actions/upload-artifact@v4
