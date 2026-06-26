@@ -27,7 +27,7 @@ jobs:
           node-version: 20
 
       - name: "initialize rust compiler toolchain"
-          uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: "cache rust compilation units"
         uses: swatinem/rust-cache@v2
