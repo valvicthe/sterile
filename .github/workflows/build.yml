@@ -2,17 +2,22 @@ name: "release-build"
 
 on:
   push:
+    tags:
+      - 'v*'
+  workflow_dispatch: # Allows manual triggering from the Actions UI
 
 jobs:
   compile-binaries:
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: "windows-latest"
+            artifact_path: "src-tauri/target/release/bundle/msi/*.msi"
+            artifact_name: "sterile-audio-windows"
           - platform: "macos-latest"
+            artifact_path: "src-tauri/target/release/bundle/dmg/*.dmg"
+            artifact_name: "sterile-audio-mac"
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -33,15 +38,19 @@ jobs:
           workspaces: "./src-tauri -> target"
 
       - name: "provision node module dependencies"
-        run: npm ci
+        run: npm install
 
       - name: "execute production platform bundle"
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "STERILE AUDIO Engine Build ${{ github.ref_name }}"
-          releaseBody: "Automated binary compilation for platform ${{ matrix.platform }}."
-          releaseDraft: true
-          prerelease: false
+          # Disables automatic release creation so we handle artifacts manually
+          tauriScript: npm run tauri build
+
+      - name: "upload system artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
