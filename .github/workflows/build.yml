@@ -1,0 +1,49 @@
+name: "release-build"
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  compile-binaries:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest"
+          - platform: "macos-latest"
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: "checkout repository source"
+        uses: actions/checkout@v4
+
+      - name: "initialize node platform runtime"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: "initialize rust compiler toolchain"
+          uses: dtolnay/rust-toolchain@stable
+
+      - name: "cache rust compilation units"
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: "provision node module dependencies"
+        run: npm ci
+
+      - name: "execute production platform bundle"
+        uses: tauri-apps/tauri-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "STERILE AUDIO Engine Build ${{ github.ref_name }}"
+          releaseBody: "Automated binary compilation for platform ${{ matrix.platform }}."
+          releaseDraft: true
+          prerelease: false
